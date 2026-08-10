@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3정5S 월별 현장점검 체크시트 | ㈜태진다이텍</title>
+<style>
+:root{
+  --navy:#16233b; --navy2:#1f3864; --steel:#2f5fb3; --line:#d9dee7;
+  --ink:#1f2a44; --mut:#8a93a3; --bg:#f4f6fa;
+  --ok:#15803d; --okbg:#e8f6ed; --warn:#b45309; --warnbg:#fef3c7;
+  --bad:#dc2626; --badbg:#fee2e2;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','맑은 고딕',sans-serif}
+body{background:var(--bg);color:var(--ink);font-size:14px}
+header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header h1{font-size:19px}
+header .sub{font-size:12px;color:#aebbd3;margin-top:3px}
+.hbtns{display:flex;gap:8px;align-items:center}
+.badge{font-size:11px;padding:3px 10px;border-radius:12px;background:#2b3d5f;color:#cdd8ea}
+.badge.on{background:#164a2b;color:#8be0a8}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{padding:9px 18px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;font-weight:700;font-size:13.5px;color:var(--mut)}
+.tab.act{background:var(--navy);color:#fff;border-color:var(--navy)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:15.5px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,input[type=text],input[type=date],textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;background:#fff}
+textarea{width:100%;resize:vertical;min-height:34px}
+button{border:0;border-radius:8px;padding:9px 16px;font-weight:700;font-size:13.5px;cursor:pointer}
+.btn-p{background:var(--steel);color:#fff}
+.btn-g{background:#eef1f5;color:var(--ink)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-warn{background:var(--warn);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#eef3fb;color:var(--navy);padding:8px 6px;border:1px solid var(--line);font-size:12.5px}
+td{border:1px solid var(--line);padding:6px;text-align:center;vertical-align:middle}
+td.l{text-align:left}
+.pill{display:inline-block;padding:2px 10px;border-radius:11px;font-size:11.5px;font-weight:700}
+.p-ok{background:var(--okbg);color:var(--ok)}
+.p-warn{background:var(--warnbg);color:var(--warn)}
+.p-bad{background:var(--badbg);color:var(--bad)}
+.p-mut{background:#eef1f5;color:var(--mut)}
+.jbtn{width:34px;height:30px;border-radius:6px;border:1.5px solid var(--line);background:#fff;font-weight:800;cursor:pointer;color:#b9c0cc}
+.jbtn.selO{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.jbtn.selD{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}
+.jbtn.selX{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .k{font-size:12px;color:var(--mut);font-weight:700}
+.kpi .v{font-size:22px;font-weight:800;margin-top:4px}
+.note{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.6}
+.secH{background:var(--navy2);color:#fff;font-weight:700;padding:7px 10px;border-radius:6px;margin:14px 0 8px;font-size:13px}
+.hide{display:none}
+.msg{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 22px;border-radius:22px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+.msg.show{opacity:1}
+.sig{border:1.5px dashed var(--line);border-radius:8px;padding:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.warnbox{background:var(--warnbg);border:1.5px solid var(--warn);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink);margin-bottom:12px}
+@media(max-width:760px){ .wrap{padding:10px} td,th{font-size:11.5px;padding:5px 3px} .jbtn{width:30px;height:28px} }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>3정5S 월별 현장점검 체크시트</h1>
+    <div class="sub">㈜태진다이텍 품질관리팀 · 매월 첫째 주 점검 · TJ-MP-Q200 연계</div>
+  </div>
+  <div class="hbtns">
+    <span class="badge" id="syncBadge">서버 미연결</span>
+    <button class="btn-g" onclick="cloudDown()">⬇ 불러오기</button>
+    <button class="btn-p" onclick="cloudUp(true)">☁ 서버 저장</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs" style="margin-bottom:8px">
+    <div class="tab bt act" data-b="B동" onclick="setBldg('B동')" style="border-radius:20px">🏭 B동</div>
+    <div class="tab bt" data-b="C동" onclick="setBldg('C동')" style="border-radius:20px">🏭 C동</div>
+  </div>
+  <div class="tabs">
+    <div class="tab act" data-t="check" onclick="tab('check')">📝 월별 점검</div>
+    <div class="tab" data-t="issue" onclick="tab('issue')">⚠ 지적사항 조치</div>
+    <div class="tab" data-t="year" onclick="tab('year')">📅 연간 현황</div>
+    <div class="tab" data-t="set" onclick="tab('set')">⚙ 설정</div>
+  </div>
+
+  <!-- ===== 월별 점검 ===== -->
+  <div id="v-check">
+    <div id="dueWarn" class="warnbox hide"></div>
+    <div class="card">
+      <h2>점검 정보 · <span id="bldgLabel" style="color:var(--steel)">B동</span></h2>
+      <div class="row">
+        <label>점검 월 <select id="selMonth" onchange="renderCheck()"></select></label>
+        <label>점검일 <input type="date" id="inDate" onchange="saveMeta()"></label>
+        <label>점검자 <input type="text" id="inInspector" style="width:110px" placeholder="예: 여혜빈" onchange="saveMeta()"></label>
+        <label>확인자(관리자) <input type="text" id="inManager" style="width:110px" placeholder="예: 강창구" onchange="saveMeta()"></label>
+      </div>
+      <div class="note">판정: <b style="color:var(--ok)">O 양호</b> · <b style="color:var(--warn)">△ 보통(관찰)</b> · <b style="color:var(--bad)">X 불량(지적)</b> — X 선택 시 지적내용을 입력하면 [지적사항 조치] 탭에 자동 등록됩니다.</div>
+    </div>
+    <div id="checkArea"></div>
+    <div class="card">
+      <h2>점검 마감</h2>
+      <div class="sig">
+        <div>점검 완료: <span id="doneState" class="pill p-mut">미완료</span></div>
+        <div>관리자 확인: <span id="mgrState" class="pill p-mut">미확인</span></div>
+        <button class="btn-ok" onclick="completeMonth()">✔ 점검 완료 처리</button>
+        <button class="btn-warn" onclick="managerSign()">✍ 관리자 확인(서명)</button>
+      </div>
+      <div class="note">관리자 확인은 월 1회, 점검 완료 후 실시합니다. 확인 시각이 기록됩니다.</div>
+    </div>
+  </div>
+
+  <!-- ===== 지적사항 조치 ===== -->
+  <div id="v-issue" class="hide">
+    <div class="card">
+      <h2>지적사항 · 조치결과 관리 <span class="note">(차기 점검 시 재확인)</span></h2>
+      <div class="row" style="margin-bottom:10px">
+        <label>상태 <select id="fIssue" onchange="renderIssues()">
+          <option value="">전체</option><option>미조치</option><option>조치완료</option><option>재확인완료</option>
+        </select></label>
+      </div>
+      <div style="overflow-x:auto"><table id="tblIssues"></table></div>
+      <div class="note">X(불량) 지적은 자동 등록됩니다. 조치결과 입력 → [조치완료], 다음 달 점검에서 이상 없으면 → [재확인완료]로 종결하세요.</div>
+    </div>
+  </div>
+
+  <!-- ===== 연간 현황 ===== -->
+  <div id="v-year" class="hide">
+    <div class="kpis" id="yearKpis"></div>
+    <div class="card">
+      <h2>연간 점검 현황판 <span class="note" id="yearLabel"></span></h2>
+      <div style="overflow-x:auto"><table id="tblYear"></table></div>
+      <div class="note">매월 첫째 주 점검 기준. 점검일·점검자·관리자 확인이 모두 기록되어야 완료입니다.</div>
+    </div>
+  </div>
+
+  <!-- ===== 설정 ===== -->
+  <div id="v-set" class="hide">
+    <div class="card">
+      <h2>SUPABASE 연결
+        <span id="sbState" class="pill p-mut">미연결</span>
+        <span class="note" id="sbInfo"></span>
+      </h2>
+      <div class="row" style="align-items:flex-start">
+        <div style="flex:1;min-width:280px">
+          <div style="font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px">Project URL</div>
+          <input type="text" id="sbUrl" style="width:100%" placeholder="https://xxxx.supabase.co">
+        </div>
+        <div style="flex:1;min-width:280px">
+          <div style="font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px">anon key</div>
+          <input type="text" id="sbKey" style="width:100%" placeholder="sb_publishable_... 또는 eyJhbGci...">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn-p" onclick="sbSaveConn()">🔗 다시 연결하고 불러오기</button>
+        <button class="btn-g" onclick="cloudUp(true)">☁ 서버에 저장</button>
+        <button class="btn-g" onclick="sbReset()">기본값 복원</button>
+      </div>
+      <div class="note">저장 키: <b>patrol_3j5s_v1</b> (kv_store) · 다른 기기에서도 같은 값을 넣으면 점검 기록이 공유됩니다.</div>
+    </div>
+    <div class="card">
+      <h2>점검 구역 관리 · <span id="bldgLabel2" style="color:var(--steel)">B동</span></h2>
+      <div class="row" style="margin-bottom:8px">
+        <input type="text" id="newArea" placeholder="구역명 (예: 세척장)" style="width:200px">
+        <button class="btn-p" onclick="addArea()">+ 구역 추가</button>
+      </div>
+      <div id="areaList"></div>
+    </div>
+    <div class="card">
+      <h2>데이터 관리</h2>
+      <div class="row">
+        <button class="btn-g" onclick="exportJson()">📄 백업 내려받기</button>
+        <button class="btn-g" onclick="document.getElementById('impFile').click()">📂 백업 불러오기</button>
+        <input type="file" id="impFile" class="hide" accept=".json" onchange="importJson(this)">
+      </div>
+      <div class="note" id="lastSaved">-</div>
+    </div>
+  </div>
+</div>
+<div class="msg" id="msg"></div>
+<script>
+/* ============ 기본 데이터 ============ */
+const SB_URL_DEF="https://ebthltdmxpzlkfwvdloz.supabase.co";
+const SB_KEY_DEF="sb_publishable_ZSgcZapb7cTgFezGmOV_ow_9MT15SnS";
+var SB_URL=localStorage.getItem('patrol_sb_url')||SB_URL_DEF;
+var SB_KEY=localStorage.getItem('patrol_sb_key')||SB_KEY_DEF;
+const CLOUD_KEY="patrol_3j5s_v1";
+const LS_KEY="patrol_3j5s_v1";
+
+const AREA_ITEMS={
+ "프레스 작업장":{
+  "3정":[
+   ["정위치","생산 중 코일·제품 파렛트가 지정 구역(구획선) 안에 보관되는가"],
+   ["정품","작업대·설비 주변에 해당 공정 부품과 공구만 있는가(타품번 혼입 없음)"],
+   ["정량","파렛트 적재수량·적재높이 기준을 지키는가(과적 없음)"]],
+  "5S":[
+   ["정리","사용하지 않는 치공구·폐자재·불용품이 방치되어 있지 않은가"],
+   ["정돈","공구·소모품이 위치표시된 자리에 있고 사용 후 제자리 반납되는가"],
+   ["청소","프레스 주변 스크랩·유분·먼지가 제거되어 있는가"],
+   ["청결","스크랩 배출함 넘침이 없고 오일 누유 발생 시 즉시 조치되는가"],
+   ["습관화","보호구(안전화·귀마개) 착용, 비상정지 접근·통로 확보가 지켜지는가"]]},
+ "금형 보관장":{
+  "3정":[
+   ["정위치","금형 실제 위치가 금형 현황판(전산)과 일치하는가"],
+   ["정품","랙 주소에 지정된 금형만 적재되어 있는가(타 금형 혼재 없음)"],
+   ["정량","랙 적재 단수·하중 기준을 지키는가"]],
+  "5S":[
+   ["정리","폐기 대상·수리 대기 금형이 구분 표시 없이 방치되어 있지 않은가"],
+   ["정돈","금형 식별표(품번·등급)가 부착되어 있는가"],
+   ["청소","금형 방청유 도포·먼지 제거 상태가 양호한가"],
+   ["청결","랙·바닥이 청결하고 낙하 위험물이 없는가"],
+   ["습관화","금형 입·출고 시 현황판 즉시 갱신, 지게차 안전수칙을 지키는가"]]},
+ "자재 창고(코일)":{
+  "3정":[
+   ["정위치","코일이 지정 랙·구역에 보관되고 넘어짐 방지 가이드/스토퍼를 사용하는가"],
+   ["정품","사양별(SUS430/SUS304) 구분 보관 및 색상 구분 스티커가 부착되어 있는가"],
+   ["정량","적재 단수·구역별 보관수량 기준을 지키는가"]],
+  "5S":[
+   ["정리","장기보관·유효기간(3개월) 초과 코일에 식별태그 부착 및 별도 구역 보관되는가"],
+   ["정돈","수입검사 합격스티커가 부착되어 미검사품과 구분되는가"],
+   ["청소","코일 표면 이물·바닥 청소 상태가 양호한가"],
+   ["청결","습기·누수 등 발청 우려 환경이 없는가"],
+   ["습관화","선입선출을 지키고 중량물 취급 안전수칙(안전모 등)을 지키는가"]]},
+ "세척장":{
+  "3정":[
+   ["정위치","세척 전 제품과 세척 후 제품이 구분된 위치에 보관되는가"],
+   ["정품","지정된 세척액·용기만 사용하는가(오사용 없음)"],
+   ["정량","세척조 액위·세척액 투입량 기준을 지키는가"]],
+  "5S":[
+   ["정리","사용 후 용기·불용품이 방치되어 있지 않은가"],
+   ["정돈","세척일지·점검표가 비치되고 기록되어 있는가"],
+   ["청소","세척조 청소주기(1회/월)를 지키고 세척조 상태가 양호한가"],
+   ["청결","바닥 누유·세척액 비산이 없는가"],
+   ["습관화","보호구(내화학 장갑 등) 착용, MSDS가 비치되어 있는가"]]}
+};
+const DEFAULT_ITEMS={
+ "3정":[
+  ["정위치","자재·공구가 지정 위치에 보관되어 있는가"],
+  ["정품","지정 위치에 지정 품목만 보관되어 있는가(혼입 없음)"],
+  ["정량","지정 수량·적재높이 기준을 지키고 있는가"]],
+ "5S":[
+  ["정리","불필요한 물품이 방치되어 있지 않은가"],
+  ["정돈","필요 물품에 위치 표시·식별표가 되어 있는가"],
+  ["청소","바닥·설비·주변에 이물·먼지·유분이 없는가"],
+  ["청결","정리·정돈·청소 상태가 유지되고 있는가"],
+  ["습관화","보호구 착용·통로 확보 등 기준을 지키고 있는가"]]
+};
+function itemsFor(area){ return AREA_ITEMS[area]||DEFAULT_ITEMS; }
+const DEF_AREAS=["프레스 작업장","금형 보관장","자재 창고(코일)","세척장"];
+const BLDGS=["B동","C동"];
+var CUR_B="B동";
+
+var DB=null;
+function blank(){ return {v:2, year:new Date().getFullYear(),
+  bldgAreas:{"B동":[...DEF_AREAS],"C동":[...DEF_AREAS]}, months:{}, issues:[]}; }
+function load(){ try{ const s=localStorage.getItem(LS_KEY); DB=s?JSON.parse(s):blank(); }catch(e){ DB=blank(); }
+  // v1 -> v2 마이그레이션 (기존 단일 데이터는 B동으로)
+  if(!DB.v||DB.v<2){
+    const old=DB; DB=blank(); DB.year=old.year||DB.year;
+    if(old.areas&&old.areas.length) DB.bldgAreas["B동"]=[...old.areas];
+    for(const k in (old.months||{})) DB.months["B동|"+k]=old.months[k];
+    (old.issues||[]).forEach(x=>{ x.bldg=x.bldg||"B동"; DB.issues.push(x); });
+  }
+  if(!DB.bldgAreas) DB.bldgAreas={"B동":[...DEF_AREAS],"C동":[...DEF_AREAS]};
+  BLDGS.forEach(b=>{ if(!DB.bldgAreas[b]||!DB.bldgAreas[b].length) DB.bldgAreas[b]=[...DEF_AREAS]; });
+  if(!DB.months) DB.months={}; if(!DB.issues) DB.issues=[]; }
+function areasOf(b){ return DB.bldgAreas[b||CUR_B]; }
+function setBldg(b){ CUR_B=b;
+  document.querySelectorAll('.bt').forEach(e=>e.classList.toggle('act',e.dataset.b===b));
+  document.getElementById('bldgLabel').textContent=b;
+  const l2=document.getElementById('bldgLabel2'); if(l2)l2.textContent=b;
+  renderCheck(); renderAreas&&renderAreas();
+  const yv=document.getElementById('v-year'); if(!yv.classList.contains('hide'))renderYear();
+  const iv=document.getElementById('v-issue'); if(!iv.classList.contains('hide'))renderIssues(); }
+function persist(){ localStorage.setItem(LS_KEY, JSON.stringify(DB));
+  document.getElementById('lastSaved').textContent='마지막 저장: '+new Date().toLocaleString('ko-KR');
+  clearTimeout(persist._t); persist._t=setTimeout(()=>cloudUp(false), 4000); }
+
+function mkey(){ return CUR_B+'|'+document.getElementById('selMonth').value; }
+function monPart(k){ return k.split('|')[1]||k; }
+function mrec(k){ k=k||mkey(); if(!DB.months[k]) DB.months[k]={date:'',inspector:'',manager:'',done:false,mgrAt:'',marks:{},notes:{}}; return DB.months[k]; }
+
+/* ============ 탭/초기화 ============ */
+function tab(t){ document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('act',e.dataset.t===t));
+ ['check','issue','year','set'].forEach(v=>document.getElementById('v-'+v).classList.toggle('hide',v!==t));
+ if(t==='issue')renderIssues(); if(t==='year')renderYear(); if(t==='set'){renderAreas(); sbFillForm();} }
+
+function initMonths(){ const sel=document.getElementById('selMonth'); const y=DB.year;
+ sel.innerHTML=''; for(let m=1;m<=12;m++){ const k=`${y}-${String(m).padStart(2,'0')}`;
+   const o=document.createElement('option'); o.value=k; o.textContent=`${y}년 ${m}월`; sel.appendChild(o); }
+ const now=new Date(); const cur=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+ sel.value=DB.months[cur]!==undefined||now.getFullYear()===y?cur.replace(String(now.getFullYear()),String(y)):`${y}-01`;
+ if(![...sel.options].some(o=>o.value===sel.value)) sel.value=`${y}-01`; }
+
+/* ============ 월별 점검 렌더 ============ */
+function renderCheck(){
+ const r=mrec();
+ document.getElementById('inDate').value=r.date||'';
+ document.getElementById('inInspector').value=r.inspector||'';
+ document.getElementById('inManager').value=r.manager||'';
+ // 미실시 경고 (매월 첫째 주 기준)
+ const [y,m]=monPart(mkey()).split('-').map(Number);
+ const now=new Date(); const w=document.getElementById('dueWarn');
+ const monthStart=new Date(y,m-1,1), firstWeekEnd=new Date(y,m-1,7);
+ if(!r.done && now>firstWeekEnd && now.getMonth()+1>=m && now.getFullYear()>=y && (now.getFullYear()>y||now.getMonth()+1>m||now>firstWeekEnd)){
+   if(now>=monthStart){ w.classList.remove('hide');
+     w.innerHTML=`⚠ <b>${CUR_B} ${m}월 점검 미완료</b> — 점검 기준일(매월 첫째 주)이 지났습니다. 점검 실시 후 완료 처리하세요.`; }
+ } else w.classList.add('hide');
+ // 체크표
+ const host=document.getElementById('checkArea'); host.innerHTML='';
+ areasOf().forEach(area=>{
+  const card=document.createElement('div'); card.className='card';
+  let h=`<h2>📍 ${area}</h2><div style="overflow-x:auto"><table><tr><th style="width:70px">구분</th><th style="width:90px">항목</th><th class="l">점검 내용</th><th style="width:130px">판정</th><th class="l" style="min-width:180px">지적내용 (X 선택 시)</th></tr>`;
+  const IT=itemsFor(area);
+  for(const grp in IT){ IT[grp].forEach(([nm,desc],i)=>{
+    const id=`${area}|${grp}|${nm}`;
+    const v=(r.marks[id]||''); const note=r.notes[id]||'';
+    h+=`<tr>${i===0?`<td rowspan="${IT[grp].length}" style="font-weight:800;color:var(--navy2)">${grp}</td>`:''}
+      <td style="font-weight:700">${nm}</td><td class="l">${desc}</td>
+      <td><button class="jbtn ${v==='O'?'selO':''}" onclick="mark('${id}','O')">O</button>
+          <button class="jbtn ${v==='△'?'selD':''}" onclick="mark('${id}','△')">△</button>
+          <button class="jbtn ${v==='X'?'selX':''}" onclick="mark('${id}','X')">X</button></td>
+      <td class="l"><textarea data-id="${id}" ${v==='X'?'':'disabled'} placeholder="${v==='X'?'지적내용 입력':''}" onchange="noteChg(this)">${note}</textarea></td></tr>`;
+  });}
+  h+='</table></div>'; card.innerHTML=h; host.appendChild(card);
+ });
+ refreshDone();
+}
+function mark(id,v){ const r=mrec(); if(r.marks[id]===v){delete r.marks[id];} else r.marks[id]=v;
+ if(r.marks[id]!=='X'){ /* keep note but disable */ }
+ persist(); renderCheck(); }
+function noteChg(t){ const r=mrec(); r.notes[t.dataset.id]=t.value.trim();
+ // X + 내용 있으면 지적사항 자동 등록/갱신
+ const id=t.dataset.id;
+ if(r.marks[id]==='X' && t.value.trim()){
+   const [area,grp,nm]=id.split('|'); const mk=monPart(mkey());
+   let ex=DB.issues.find(x=>x.bldg===CUR_B&&x.month===mk&&x.id===id);
+   if(!ex){ DB.issues.push({bldg:CUR_B,month:mk,id,area,grp,item:nm,text:t.value.trim(),action:'',status:'미조치',recheck:''}); }
+   else ex.text=t.value.trim();
+ }
+ persist(); }
+function saveMeta(){ const r=mrec();
+ r.date=document.getElementById('inDate').value;
+ r.inspector=document.getElementById('inInspector').value.trim();
+ r.manager=document.getElementById('inManager').value.trim();
+ persist(); refreshDone(); }
+function totalItems(){ let n=0; areasOf().forEach(a=>{ const IT=itemsFor(a); for(const g in IT)n+=IT[g].length; }); return n; }
+function refreshDone(){ const r=mrec();
+ const marked=Object.keys(r.marks).length, tot=totalItems();
+ const d=document.getElementById('doneState');
+ d.textContent=r.done?`완료 (${r.date||'-'})`:`미완료 · ${marked}/${tot} 입력`;
+ d.className='pill '+(r.done?'p-ok':'p-mut');
+ const mg=document.getElementById('mgrState');
+ mg.textContent=r.mgrAt?`확인 ${r.mgrAt}`:'미확인';
+ mg.className='pill '+(r.mgrAt?'p-ok':'p-mut'); }
+function completeMonth(){ const r=mrec();
+ if(!r.date||!r.inspector){ toast('점검일과 점검자를 입력하세요'); return; }
+ const marked=Object.keys(r.marks).length, tot=totalItems();
+ if(marked<tot && !confirm(`판정 입력 ${marked}/${tot}건입니다. 그대로 완료 처리할까요?`)) return;
+ r.done=true; persist(); refreshDone(); toast('점검 완료 처리되었습니다'); }
+function managerSign(){ const r=mrec();
+ if(!r.done){ toast('점검 완료 후 관리자 확인이 가능합니다'); return; }
+ if(!r.manager){ toast('확인자(관리자) 이름을 입력하세요'); return; }
+ r.mgrAt=new Date().toLocaleDateString('ko-KR'); persist(); refreshDone(); toast('관리자 확인 완료'); }
+
+/* ============ 지적사항 ============ */
+function renderIssues(){ const f=document.getElementById('fIssue').value;
+ const rows=DB.issues.filter(x=>(x.bldg||'B동')===CUR_B).filter(x=>!f||x.status===f)
+   .sort((a,b)=>b.month.localeCompare(a.month));
+ let h='<tr><th>동</th><th>월</th><th>구역</th><th>구분</th><th>항목</th><th class="l">지적내용</th><th class="l">조치결과</th><th>상태</th><th>차기 재확인</th></tr>';
+ rows.forEach((x,i)=>{
+  const pi=DB.issues.indexOf(x);
+  const pill=x.status==='재확인완료'?'p-ok':(x.status==='조치완료'?'p-warn':'p-bad');
+  h+=`<tr><td>${x.bldg||'B동'}</td><td>${x.month.slice(5)}월</td><td>${x.area}</td><td>${x.grp}</td><td>${x.item}</td>
+    <td class="l">${x.text}</td>
+    <td class="l"><textarea onchange="issueAct(${pi},this.value)" placeholder="조치내용 입력">${x.action||''}</textarea></td>
+    <td><span class="pill ${pill}">${x.status}</span></td>
+    <td>${x.status==='조치완료'?`<button class="btn-ok" style="padding:5px 10px;font-size:12px" onclick="issueRecheck(${pi})">재확인 완료</button>`:(x.recheck?x.recheck:'-')}</td></tr>`;
+ });
+ if(!rows.length) h+='<tr><td colspan="9" style="color:var(--mut);padding:18px">지적사항이 없습니다</td></tr>';
+ document.getElementById('tblIssues').innerHTML=h; }
+function issueAct(i,v){ const x=DB.issues[i]; x.action=v.trim();
+ x.status=v.trim()?'조치완료':'미조치'; persist(); renderIssues(); }
+function issueRecheck(i){ const x=DB.issues[i];
+ x.status='재확인완료'; x.recheck=new Date().toLocaleDateString('ko-KR'); persist(); renderIssues(); toast('재확인 완료로 종결'); }
+
+/* ============ 연간 현황 ============ */
+function renderYear(){ const y=DB.year;
+ document.getElementById('yearLabel').textContent=`${y}년 · 매월 첫째 주 · B동/C동`;
+ const now=new Date();
+ let doneB=0,doneC=0,openB=0,openC=0;
+ const iss=DB.issues.length, fin=DB.issues.filter(x=>x.status==='재확인완료').length;
+ let h2='<tr><th rowspan="2">월</th><th colspan="3" style="background:#dfe9f8">B동</th><th colspan="3" style="background:#e8f2e6">C동</th><th rowspan="2">지적</th></tr>';
+ h2+='<tr><th style="background:#dfe9f8">점검일/점검자</th><th style="background:#dfe9f8">완료</th><th style="background:#dfe9f8">관리자</th><th style="background:#e8f2e6">점검일/점검자</th><th style="background:#e8f2e6">완료</th><th style="background:#e8f2e6">관리자</th></tr>';
+ for(let m=1;m<=12;m++){ const mk=`${y}-${String(m).padStart(2,'0')}`;
+  const isPast=(y<now.getFullYear())||(y===now.getFullYear()&&m<=now.getMonth()+1);
+  const cell=(b)=>{ const r=DB.months[b+'|'+mk];
+    let st,cls;
+    if(r&&r.done){ st='✔ 완료'; cls='p-ok'; if(b==='B동')doneB++; else doneC++; }
+    else if(isPast){ st='미실시'; cls='p-bad'; if(b==='B동')openB++; else openC++; }
+    else { st='예정'; cls='p-mut'; }
+    const dj=r?.date?`${r.date.slice(5)}<br>${r.inspector||''}`:'-';
+    const mg=r?.mgrAt?`<span class="pill p-ok">✍ ${r.mgrAt}</span>`:'-';
+    return `<td>${dj}</td><td><span class="pill ${cls}">${st}</span></td><td>${mg}</td>`; };
+  const nIss=DB.issues.filter(x=>x.month===mk).length;
+  h2+=`<tr><td style="font-weight:700">${m}월</td>${cell('B동')}${cell('C동')}<td>${nIss?`<span class="pill p-warn">${nIss}건</span>`:'-'}</td></tr>`; }
+ document.getElementById('tblYear').innerHTML=h2;
+ document.getElementById('yearKpis').innerHTML=`
+  <div class="kpi"><div class="k">B동 완료</div><div class="v" style="color:var(--ok)">${doneB} / 12</div></div>
+  <div class="kpi"><div class="k">C동 완료</div><div class="v" style="color:var(--ok)">${doneC} / 12</div></div>
+  <div class="kpi"><div class="k">미실시(경과)</div><div class="v" style="color:${(openB+openC)?'var(--bad)':'var(--ok)'}">B ${openB} · C ${openC}</div></div>
+  <div class="kpi"><div class="k">지적 누계 / 종결</div><div class="v" style="color:var(--warn)">${iss}건 / <span style="color:var(--ok)">${fin}건</span></div></div>`; }
+
+/* ============ 설정 ============ */
+function renderAreas(){ const el=document.getElementById('areaList');
+ const L2=document.getElementById('bldgLabel2'); if(L2)L2.textContent=CUR_B;
+ el.innerHTML=areasOf().map((a,i)=>`<span class="pill p-mut" style="font-size:13px;margin:3px;display:inline-block">${a}
+   <b style="cursor:pointer;color:var(--bad)" onclick="delArea(${i})"> ✕</b></span>`).join(''); }
+function addArea(){ const v=document.getElementById('newArea').value.trim();
+ if(!v)return; if(areasOf().includes(v)){toast('이미 있는 구역입니다');return;}
+ areasOf().push(v); document.getElementById('newArea').value=''; persist(); renderAreas(); renderCheck(); }
+function delArea(i){ if(!confirm(`'${areasOf()[i]}' 구역을 삭제할까요? (기존 기록은 유지)`))return;
+ areasOf().splice(i,1); persist(); renderAreas(); renderCheck(); }
+
+/* ============ 백업 ============ */
+function exportJson(){ const b=new Blob([JSON.stringify(DB,null,1)],{type:'application/json'});
+ const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+ a.download=`3정5S점검_백업_${new Date().toISOString().slice(0,10)}.json`; a.click(); }
+function importJson(inp){ const f=inp.files[0]; if(!f)return; const rd=new FileReader();
+ rd.onload=()=>{ try{ const d=JSON.parse(rd.result);
+   if(!d.months){toast('올바른 백업 파일이 아닙니다');return;}
+   DB=d; persist(); initMonths(); renderCheck(); toast('백업을 불러왔습니다'); }catch(e){toast('불러오기 실패');} };
+ rd.readAsText(f); inp.value=''; }
+
+/* ============ Supabase 동기화 (병합·빈데이터 보호) ============ */
+async function sb(method, body){
+ const url=`${SB_URL}/rest/v1/kv_store?key=eq.${CLOUD_KEY}`;
+ const h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+ if(method==='GET') return fetch(url+'&select=value',{headers:h});
+ if(method==='UPSERT') return fetch(`${SB_URL}/rest/v1/kv_store`,{method:'POST',
+   headers:{...h,'Prefer':'resolution=merge-duplicates'},
+   body:JSON.stringify([{key:CLOUD_KEY,value:body}])});
+}
+function isEmptyDB(d){ return !d || ((!d.months||!Object.keys(d.months).length) && (!d.issues||!d.issues.length)); }
+function mergeDB(loc, srv){
+ // 월 데이터: 서버·로컬 중 정보량 많은 쪽 우선(입력 수+완료 여부)
+ const out=JSON.parse(JSON.stringify(loc));
+ for(const k in (srv.months||{})){
+   const s=srv.months[k], l=out.months[k];
+   const score=r=>!r?0:(Object.keys(r.marks||{}).length+(r.done?100:0)+(r.mgrAt?50:0));
+   if(score(s)>score(l)) out.months[k]=s;
+ }
+ // 지적사항: bldg+month+id 기준 합집합, 진행상태 앞선 쪽 우선
+ const rank={'미조치':0,'조치완료':1,'재확인완료':2};
+ (srv.issues||[]).forEach(si=>{
+   const ex=out.issues.find(x=>(x.bldg||'B동')===(si.bldg||'B동')&&x.month===si.month&&x.id===si.id);
+   if(!ex) out.issues.push(si);
+   else if((rank[si.status]||0)>(rank[ex.status]||0)) Object.assign(ex,si);
+ });
+ // 구역: 동별 합집합
+ for(const b in (srv.bldgAreas||{})){ if(!out.bldgAreas[b]) out.bldgAreas[b]=[];
+   srv.bldgAreas[b].forEach(a=>{ if(!out.bldgAreas[b].includes(a)) out.bldgAreas[b].push(a); }); }
+ return out;
+}
+async function cloudDown(){ try{
+ const r=await sb('GET'); if(!r.ok)throw 0; const arr=await r.json();
+ if(!arr.length||!arr[0].value){ toast('서버에 데이터가 없습니다'); setBadge(true,'서버에 저장된 기록 없음 · '+new Date().toLocaleTimeString('ko-KR')); return; }
+ const srv=arr[0].value;
+ if(isEmptyDB(srv) && !isEmptyDB(DB)){ toast('서버 데이터가 비어 있어 로컬을 유지합니다'); setBadge(true); return; }
+ DB=mergeDB(DB,srv); persist(); initMonths(); renderCheck();
+ const nM=Object.keys(DB.months).length, nI=DB.issues.length;
+ setBadge(true,`점검 ${nM}건 · 지적 ${nI}건 불러옴 · `+new Date().toLocaleTimeString('ko-KR'));
+ toast('서버 데이터 반영(병합) 완료');
+}catch(e){ setBadge(false,'연결 실패 · URL/key를 확인하세요'); toast('서버 연결 실패'); } }
+async function cloudUp(show){ try{
+ if(isEmptyDB(DB)){ if(show)toast('저장할 데이터가 없습니다'); return; }
+ const r=await sb('UPSERT',DB); if(!r.ok)throw 0;
+ setBadge(true,'마지막 저장 '+new Date().toLocaleTimeString('ko-KR')); if(show)toast('서버 저장 완료');
+}catch(e){ setBadge(false,'저장 실패 · 연결 정보를 확인하세요'); if(show)toast('서버 저장 실패'); } }
+function setBadge(on,info){ const b=document.getElementById('syncBadge');
+ b.textContent=on?'서버 연결됨':'서버 미연결'; b.classList.toggle('on',!!on);
+ const s=document.getElementById('sbState');
+ if(s){ s.textContent=on?'연결됨':'미연결'; s.className='pill '+(on?'p-ok':'p-mut'); }
+ if(info!==undefined) sbInfo(info); }
+
+function toast(s){ const m=document.getElementById('msg'); m.textContent=s; m.classList.add('show');
+ clearTimeout(toast._t); toast._t=setTimeout(()=>m.classList.remove('show'),2200); }
+
+
+/* ==== 1~7월 점검 실적 초기 등록 (최초 1회) ==== */
+function seedHistory(){
+ if(DB._seed7==='v2') return;
+ const dates={1:'2026-01-05',2:'2026-02-02',3:'2026-03-04',4:'2026-04-06',5:'2026-05-04',6:'2026-06-03',7:'2026-07-06'};
+ const insp={'B동':'강영태','C동':'유성환'};
+ const mgr='강창구';
+ BLDGS.forEach(b=>{
+  for(let m=1;m<=7;m++){
+   const k=b+'|'+DB.year+'-'+String(m).padStart(2,'0');
+   if(DB.months[k]&&DB.months[k].done){ DB.months[k].inspector=insp[b]; continue; } // 점검자만 갱신
+   const marks={};
+   DB.bldgAreas[b].forEach(a=>{ const IT=itemsFor(a);
+     for(const g in IT) IT[g].forEach(([nm])=>{ marks[a+'|'+g+'|'+nm]='O'; }); });
+   DB.months[k]={date:dates[m],inspector:insp[b],manager:mgr,done:true,
+     mgrAt:new Date(dates[m]).toLocaleDateString('ko-KR'),marks,notes:{}};
+  }
+ });
+ DB._seed7='v2'; persist();
+}
+
+
+/* ==== Supabase 연결 설정 ==== */
+function sbFillForm(){ const u=document.getElementById('sbUrl'), k=document.getElementById('sbKey');
+ if(u) u.value=SB_URL; if(k) k.value=SB_KEY; }
+function sbSaveConn(){
+ const u=document.getElementById('sbUrl').value.trim().replace(/\/+$/,'');
+ const k=document.getElementById('sbKey').value.trim();
+ if(!u||!k){ toast('URL과 anon key를 모두 입력하세요'); return; }
+ if(!/^https:\/\/.+\.supabase\.co$/.test(u)){ toast('Project URL 형식을 확인하세요'); return; }
+ SB_URL=u; SB_KEY=k;
+ localStorage.setItem('patrol_sb_url',u); localStorage.setItem('patrol_sb_key',k);
+ toast('연결 정보 저장 · 서버에서 불러오는 중...'); cloudDown();
+}
+function sbReset(){ SB_URL=SB_URL_DEF; SB_KEY=SB_KEY_DEF;
+ localStorage.removeItem('patrol_sb_url'); localStorage.removeItem('patrol_sb_key');
+ sbFillForm(); toast('기본값으로 복원했습니다'); cloudDown(); }
+function sbInfo(txt){ const e=document.getElementById('sbInfo'); if(e) e.textContent=txt||''; }
+
+/* ============ 시작 ============ */
+load(); seedHistory(); initMonths(); renderCheck(); sbFillForm(); cloudDown();
+</script>
+</body>
+</html>
