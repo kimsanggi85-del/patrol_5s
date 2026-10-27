@@ -738,8 +738,10 @@ td.l{text-align:left}
 <div class="msg" id="msg">서버 데이터 반영(병합) 완료</div>
 <script>
 /* ============ 기본 데이터 ============ */
-const SB_URL_DEF="https://ebthltdmxpzlkfwvdloz.supabase.co";
-const SB_KEY_DEF="sb_publishable_ZSgcZapb7cTgFezGmOV_ow_9MT15SnS";
+const SB_URL_DEF="https://omngtyewdaqpphnzeate.supabase.co";
+const SB_KEY_DEF="sb_publishable_9j2YkkL-7ul1TrhH-NjVdQ_vWDG2-1D";
+/* [2026-10-27 Supabase 통합] 이 기기에 저장된 옛 DB 주소(ebthltd…)·키는 무시하고 SmartFactory 로 바꾼다 (설정 초기화 불필요) */
+(function(){try{function f(u,k){var v=localStorage.getItem(u)||'';if(v.indexOf('ebthltd')>=0){localStorage.setItem(u,'https://omngtyewdaqpphnzeate.supabase.co');localStorage.setItem(k,'sb_publishable_9j2YkkL-7ul1TrhH-NjVdQ_vWDG2-1D');}}f('patrol_sb_url','patrol_sb_key');}catch(e){}})();
 var SB_URL=localStorage.getItem('patrol_sb_url')||SB_URL_DEF;
 var SB_KEY=localStorage.getItem('patrol_sb_key')||SB_KEY_DEF;
 const CLOUD_KEY="patrol_3j5s_v1";
