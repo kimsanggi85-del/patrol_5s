@@ -740,7 +740,7 @@ var SB_URL=localStorage.getItem('patrol_sb_url')||SB_URL_DEF;
 var SB_KEY=localStorage.getItem('patrol_sb_key')||SB_KEY_DEF;
 const CLOUD_KEY="patrol_3j5s_v1";
 const LS_KEY="patrol_3j5s_v1";
-const APP_VER='2.1';
+const APP_VER='2.2';   // 2.2 : 자동·소급 생성 제거 — 버전이 바뀌어야 켜져 있는 옛 화면(verCheck)이 새로 고쳐진다
 /* ============ 한국시간(KST) 기준 ============ */
 const TZ='Asia/Seoul';
 function p2(n){ return String(n).padStart(2,'0'); }
@@ -874,6 +874,8 @@ function renderCheck(){
  if(gen){ w.classList.remove('hide');
      w.innerHTML=`⚠ <b>${CUR_B} ${m}월 기록은 ${GEN_TXT[gen]}</b>입니다. 실제 점검 결과가 아니므로 증빙으로 쓰지 마세요.
        <button class="btn-g" style="margin-left:8px;padding:4px 10px;font-size:12px" onclick="redoMonth()">실제 점검으로 다시 입력</button>`;
+ } else if(autoMarks(mkey()).length){ const am=autoMarks(mkey()); w.classList.remove('hide');
+     w.innerHTML=`⚠ <b>${CUR_B} ${m}월 점검표의 X ${am.length}건은 전산이 자동 생성한 지적</b>입니다 (${am.map(x=>x.item).join(', ')}). 실제 점검 판정이 아니면 해당 항목을 다시 판정하세요.`;
  } else if(!r.done && (si<ci || (si===ci && K.d>7))){ w.classList.remove('hide');
      w.innerHTML=`⚠ <b>${CUR_B} ${m}월 점검 미완료</b> — 점검 기준일(매월 첫째 주)이 지났습니다. 점검 실시 후 완료 처리하세요.`;
  } else w.classList.add('hide');
@@ -1182,13 +1184,18 @@ function ntfyKey(kind,mk){ return 'ntfy_sent_'+kind+'_'+mk; }
 const SEED_DATES={1:'2026-01-05',2:'2026-02-02',3:'2026-03-04',4:'2026-04-06',5:'2026-05-04',6:'2026-06-03',7:'2026-07-06'};
 const SEED_INSP={'B동':'강영태','C동':'유성환'};
 function genOf(k,r){
- r=r||DB.months[k]; if(!r||r.redoAt) return '';
- if(r.auto) return 'auto';
+ r=r||DB.months[k]; if(!r) return '';
+ if(r.auto) return 'auto';            // 재입력 후에도 옛 화면이 다시 자동 등록하면 auto 가 우선
+ if(r.redoAt) return '';
  const b=k.split('|')[0], mk=monPart(k), m=+mk.slice(5);
  if(mk.slice(0,4)==='2026' && SEED_DATES[m]===r.date && r.inspector===SEED_INSP[b] && r.manager==='강창구') return 'seed';
  return '';
 }
 const GEN_TXT={auto:'전산 자동생성 — 실점검 아님', seed:'전산 소급생성 — 실점검 근거 없음'};
+/* 이 달 점검표에 남아 있는 자동 생성 지적의 X 표시 (옛 seedIssues 가 실점검 달에도 넣었음) */
+function autoMarks(k){ const r=DB.months[k]; if(!r) return [];
+ const b=k.split('|')[0], mk=monPart(k);
+ return DB.issues.filter(x=>x.auto&&(x.bldg||'B동')===b&&x.month===mk&&r.marks[x.id]==='X'); }
 function realDone(k){ const r=DB.months[k]; return !!(r&&r.done&&!genOf(k,r)); }
 /* 이 달을 실제 점검으로 다시 입력 (전산 생성 판정은 genBak 에 보관) */
 function redoMonth(){ const k=mkey(), r=mrec(k), g=genOf(k,r); if(!g) return;
@@ -1250,7 +1257,13 @@ async function verCheck(){ try{
 
 /* ============ 시작 ============ */
 load(); initMonths(); renderCheck(); sbFillForm(); ntfyLoad(); cfgLoad();
-cloudDown().then(()=>{ renderCheck(); cfgLoad(); setTimeout(()=>ntfyCheckNow(true),1500); });
+cloudDown().then(async ok=>{
+  const C=cfgOf();
+  if(ok && (C.auto!==false || C.autoDay!==undefined)){   // 서버 공용 설정에 auto:false 를 최신 시각으로 남긴다 → 옛 화면이 병합해 autoRun 을 멈춤
+    C.auto=false; delete C.autoDay; C.at=Date.now(); localStorage.setItem(LS_KEY, JSON.stringify(DB));
+    try{ await cloudUp(false); }catch(e){}
+  }
+  renderCheck(); cfgLoad(); setTimeout(()=>ntfyCheckNow(true),1500); });
 setInterval(()=>{ ntfyCheckNow(true); cfgState(); }, 10*60*1000);   // 10분마다 미점검 알림 확인 (한국시간 근무시간에만)   // 10분마다 (한국시간 근무시간에만 동작)
 setInterval(verCheck, 60*60*1000);
 </script>
