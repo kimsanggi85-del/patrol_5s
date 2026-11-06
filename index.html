@@ -693,14 +693,8 @@ td.l{text-align:left}
         </div>
         <div style="flex:1;min-width:240px">
           <div style="font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px">월 실적 자동 등록</div>
-          <label style="font-size:13px;display:block;margin-bottom:6px"><input type="checkbox" id="cfgAuto" onchange="cfgSave()"> 기준일 임박 시 미완료 동 자동 등록 (월 지적 1건 포함)</label>
-          <select id="cfgAutoDay" style="width:100%" onchange="cfgSave()">
-            <option value="3">매월 3일부터</option><option value="4">매월 4일부터</option>
-            <option value="5">매월 5일부터</option><option value="6">매월 6일부터</option><option value="7">매월 7일부터</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:240px;align-self:flex-end">
-          <button class="btn-g" style="width:100%" onclick="if(confirm('이번 달 미완료 동의 점검 실적을 지금 등록할까요?'))autoRun(true)">⚡ 이번 달 실적 지금 등록</button>
+          <div class="note" style="color:var(--bad)">2026-11 제거 — 점검하지 않은 달을 전산이 '완료'로 채우는 기능은 기록 신뢰성(IATF 7.5.3) 문제로 없앴습니다.
+            미점검 달은 '미실시'로 남고 알림으로 독촉합니다. 이전에 자동·소급 생성된 기록은 화면에 <b>전산 생성</b>으로 표시됩니다.</div>
         </div>
       </div>
       <div class="note" id="cfgInfo"></div>
@@ -746,7 +740,7 @@ var SB_URL=localStorage.getItem('patrol_sb_url')||SB_URL_DEF;
 var SB_KEY=localStorage.getItem('patrol_sb_key')||SB_KEY_DEF;
 const CLOUD_KEY="patrol_3j5s_v1";
 const LS_KEY="patrol_3j5s_v1";
-const APP_VER='2.1';
+const APP_VER='2.2';   // 2.2 : 자동·소급 생성 제거 — 버전이 바뀌어야 켜져 있는 옛 화면(verCheck)이 새로 고쳐진다
 /* ============ 한국시간(KST) 기준 ============ */
 const TZ='Asia/Seoul';
 function p2(n){ return String(n).padStart(2,'0'); }
@@ -755,7 +749,7 @@ function kstNow(){ const d=new Date(Date.now()+9*36e5);
 function kDateStr(ymd){ const [y,m,d]=ymd.split('-').map(Number); return `${y}. ${m}. ${d}.`; }
 function wdayOf(ymd){ const [y,m,d]=ymd.split('-').map(Number); return new Date(Date.UTC(y,m-1,d)).getUTCDay(); }
 /* 공용 설정(모든 기기 공유, 서버 저장) */
-const CFG_DEF={from:8,to:18,wk:true,auto:true,autoDay:5,at:0};
+const CFG_DEF={from:8,to:18,wk:true,at:0};   /* auto·autoDay(월 실적 자동 등록) 2026-11 제거 */
 function cfgOf(){ if(!DB.cfg) DB.cfg={...CFG_DEF}; for(const k in CFG_DEF) if(DB.cfg[k]===undefined) DB.cfg[k]=CFG_DEF[k]; return DB.cfg; }
 function inQuiet(){ const C=cfgOf(), K=kstNow();
  if(C.wk && (K.w===0||K.w===6)) return true;
@@ -876,7 +870,13 @@ function renderCheck(){
  const [y,m]=monPart(mkey()).split('-').map(Number);
  const K=kstNow(); const w=document.getElementById('dueWarn');
  const ci=K.y*12+K.m, si=y*12+m;
- if(!r.done && (si<ci || (si===ci && K.d>7))){ w.classList.remove('hide');
+ const gen=genOf(mkey(),r);
+ if(gen){ w.classList.remove('hide');
+     w.innerHTML=`⚠ <b>${CUR_B} ${m}월 기록은 ${GEN_TXT[gen]}</b>입니다. 실제 점검 결과가 아니므로 증빙으로 쓰지 마세요.
+       <button class="btn-g" style="margin-left:8px;padding:4px 10px;font-size:12px" onclick="redoMonth()">실제 점검으로 다시 입력</button>`;
+ } else if(autoMarks(mkey()).length){ const am=autoMarks(mkey()); w.classList.remove('hide');
+     w.innerHTML=`⚠ <b>${CUR_B} ${m}월 점검표의 X ${am.length}건은 전산이 자동 생성한 지적</b>입니다 (${am.map(x=>x.item).join(', ')}). 실제 점검 판정이 아니면 해당 항목을 다시 판정하세요.`;
+ } else if(!r.done && (si<ci || (si===ci && K.d>7))){ w.classList.remove('hide');
      w.innerHTML=`⚠ <b>${CUR_B} ${m}월 점검 미완료</b> — 점검 기준일(매월 첫째 주)이 지났습니다. 점검 실시 후 완료 처리하세요.`;
  } else w.classList.add('hide');
  // 체크표
@@ -942,8 +942,9 @@ function totalItems(){ let n=0; areasOf().forEach(a=>{ const IT=itemsFor(a); for
 function refreshDone(){ const r=mrec();
  const marked=Object.keys(r.marks).length, tot=totalItems();
  const d=document.getElementById('doneState');
- d.textContent=r.done?`완료 (${r.date||'-'})`:`미완료 · ${marked}/${tot} 입력`;
- d.className='pill '+(r.done?'p-ok':'p-mut');
+ const gen=genOf(mkey(),r);
+ d.textContent=gen?'전산 생성 (실점검 아님)':r.done?`완료 (${r.date||'-'})`:`미완료 · ${marked}/${tot} 입력`;
+ d.className='pill '+(gen?'p-bad':r.done?'p-ok':'p-mut');
  const mg=document.getElementById('mgrState');
  mg.textContent=r.mgrAt?`확인 ${r.mgrAt}`:'미확인';
  mg.className='pill '+(r.mgrAt?'p-ok':'p-mut'); }
@@ -969,8 +970,9 @@ function renderIssues(){ const f=document.getElementById('fIssue').value;
  rows.forEach((x,i)=>{
   const pi=DB.issues.indexOf(x);
   const pill=x.status==='재확인완료'?'p-ok':(x.status==='조치완료'?'p-warn':'p-bad');
-  h+=`<tr><td>${x.bldg||'B동'}</td><td>${x.month.slice(5)}월</td><td>${x.area}</td><td>${x.grp}</td><td>${x.item}</td>
-    <td class="l">${x.text}</td>
+  const ag=x.auto?`<br><span class="pill p-bad" title="실제 점검 지적이 아니라 문구 목록에서 자동 생성된 항목">전산 자동생성 · 실제 지적 아님</span>`:'';
+  h+=`<tr${x.auto?' style="opacity:.6"':''}><td>${x.bldg||'B동'}</td><td>${x.month.slice(5)}월</td><td>${x.area}</td><td>${x.grp}</td><td>${x.item}</td>
+    <td class="l">${x.text}${ag}</td>
     <td class="l"><textarea onchange="issueAct(${pi},this.value)" placeholder="조치내용 입력">${x.action||''}</textarea></td>
     <td><span class="pill ${pill}">${x.status}</span></td>
     <td>${x.status==='조치완료'?`<button class="btn-ok" style="padding:5px 10px;font-size:12px" onclick="issueRecheck(${pi})">재확인 완료</button>`:(x.recheck?x.recheck:'-')}</td></tr>`;
@@ -986,28 +988,31 @@ function issueRecheck(i){ const x=DB.issues[i];
 function renderYear(){ const y=DB.year;
  document.getElementById('yearLabel').textContent=`${y}년 · 매월 첫째 주 · B동/C동`;
  const K=kstNow();
- let doneB=0,doneC=0,openB=0,openC=0;
- const iss=DB.issues.length, fin=DB.issues.filter(x=>x.status==='재확인완료').length;
+ let doneB=0,doneC=0,openB=0,openC=0,nGen=0;
+ const real=DB.issues.filter(x=>!x.auto), iss=real.length, fin=real.filter(x=>x.status==='재확인완료').length, autoIss=DB.issues.length-iss;
  let h2='<tr><th rowspan="2">월</th><th colspan="3" style="background:#dfe9f8">B동</th><th colspan="3" style="background:#e8f2e6">C동</th><th rowspan="2">지적</th></tr>';
  h2+='<tr><th style="background:#dfe9f8">점검일/점검자</th><th style="background:#dfe9f8">완료</th><th style="background:#dfe9f8">관리자</th><th style="background:#e8f2e6">점검일/점검자</th><th style="background:#e8f2e6">완료</th><th style="background:#e8f2e6">관리자</th></tr>';
  for(let m=1;m<=12;m++){ const mk=`${y}-${String(m).padStart(2,'0')}`;
   const isPast=(y<K.y)||(y===K.y&&m<=K.m);
   const cell=(b)=>{ const r=DB.months[b+'|'+mk];
     let st,cls;
-    if(r&&r.done){ st='✔ 완료'; cls='p-ok'; if(b==='B동')doneB++; else doneC++; }
+    const gen=genOf(b+'|'+mk,r);
+    if(gen){ st=gen==='auto'?'⚠ 자동생성':'⚠ 소급생성'; cls='p-bad'; nGen++; if(isPast){ if(b==='B동')openB++; else openC++; } }
+    else if(r&&r.done){ st='✔ 완료'; cls='p-ok'; if(b==='B동')doneB++; else doneC++; }
     else if(isPast){ st='미실시'; cls='p-bad'; if(b==='B동')openB++; else openC++; }
     else { st='예정'; cls='p-mut'; }
     const dj=r?.date?`${r.date.slice(5)}<br>${r.inspector||''}`:'-';
-    const mg=r?.mgrAt?`<span class="pill p-ok">✍ ${r.mgrAt}</span>`:'-';
+    const mg=gen?'<span class="pill p-bad" title="관리자 확인도 전산이 자동 입력">전산 입력</span>':r?.mgrAt?`<span class="pill p-ok">✍ ${r.mgrAt}</span>`:'-';
     return `<td>${dj}</td><td><span class="pill ${cls}">${st}</span></td><td>${mg}</td>`; };
-  const nIss=DB.issues.filter(x=>x.month===mk).length;
+  const nIss=DB.issues.filter(x=>x.month===mk&&!x.auto).length;
   h2+=`<tr><td style="font-weight:700">${m}월</td>${cell('B동')}${cell('C동')}<td>${nIss?`<span class="pill p-warn">${nIss}건</span>`:'-'}</td></tr>`; }
  document.getElementById('tblYear').innerHTML=h2;
  document.getElementById('yearKpis').innerHTML=`
   <div class="kpi"><div class="k">B동 완료</div><div class="v" style="color:var(--ok)">${doneB} / 12</div></div>
   <div class="kpi"><div class="k">C동 완료</div><div class="v" style="color:var(--ok)">${doneC} / 12</div></div>
   <div class="kpi"><div class="k">미실시(경과)</div><div class="v" style="color:${(openB+openC)?'var(--bad)':'var(--ok)'}">B ${openB} · C ${openC}</div></div>
-  <div class="kpi"><div class="k">지적 누계 / 종결</div><div class="v" style="color:var(--warn)">${iss}건 / <span style="color:var(--ok)">${fin}건</span></div></div>`; }
+  <div class="kpi"><div class="k">지적 누계 / 종결</div><div class="v" style="color:var(--warn)">${iss}건 / <span style="color:var(--ok)">${fin}건</span></div></div>
+  ${nGen||autoIss?`<div class="kpi"><div class="k">전산 생성 (실점검 아님)</div><div class="v" style="color:var(--bad)">점검 ${nGen} · 지적 ${autoIss}</div></div>`:''}`; }
 
 /* ============ 설정 ============ */
 function renderAreas(){ const el=document.getElementById('areaList');
@@ -1045,7 +1050,7 @@ function mergeDB(loc, srv){
  const out=JSON.parse(JSON.stringify(loc));
  for(const k in (srv.months||{})){
    const s=srv.months[k], l=out.months[k];
-   const score=r=>!r?0:(Object.keys(r.marks||{}).length+(r.done?100:0)+(r.mgrAt?50:0));
+   const score=r=>!r?0:(Object.keys(r.marks||{}).length+(r.done?100:0)+(r.mgrAt?50:0)+(r.redoAt?1000:0));
    if(score(s)>score(l)) out.months[k]=s;
  }
  // 지적사항: bldg+month+id 기준 합집합, 진행상태 앞선 쪽 우선
@@ -1088,27 +1093,6 @@ function toast(s){ const m=document.getElementById('msg'); m.textContent=s; m.cl
 
 
 /* ==== 1~7월 점검 실적 초기 등록 (최초 1회) ==== */
-function seedHistory(){
- if(DB._seed7==='v2') return;
- const dates={1:'2026-01-05',2:'2026-02-02',3:'2026-03-04',4:'2026-04-06',5:'2026-05-04',6:'2026-06-03',7:'2026-07-06'};
- const insp={'B동':'강영태','C동':'유성환'};
- const mgr='강창구';
- BLDGS.forEach(b=>{
-  for(let m=1;m<=7;m++){
-   const k=b+'|'+DB.year+'-'+String(m).padStart(2,'0');
-   if(DB.months[k]&&DB.months[k].done){ DB.months[k].inspector=insp[b]; continue; } // 점검자만 갱신
-   const marks={};
-   DB.bldgAreas[b].forEach(a=>{ const IT=itemsFor(a);
-     for(const g in IT) IT[g].forEach(([nm])=>{ marks[a+'|'+g+'|'+nm]='O'; }); });
-   DB.months[k]={date:dates[m],inspector:insp[b],manager:mgr,done:true,
-     mgrAt:new Date(dates[m]).toLocaleDateString('ko-KR',{timeZone:TZ}),marks,notes:{}};
-  }
- });
- DB._seed7='v2'; persist();
-}
-
-
-/* ==== Supabase 연결 설정 ==== */
 function sbFillForm(){ const u=document.getElementById('sbUrl'), k=document.getElementById('sbKey');
  if(u) u.value=SB_URL; if(k) k.value=SB_KEY; }
 function sbSaveConn(){
@@ -1191,8 +1175,36 @@ async function claim(k,hours){
  localStorage.setItem(k,String(Date.now())); return true; }
 function ntfyKey(kind,mk){ return 'ntfy_sent_'+kind+'_'+mk; }
 
+/* ============ 전산 자동·소급 생성 기록 판별 (실점검 아님) ============
+   2026-11 까지 이 앱에 있던 기능이 실제 점검 없이 기록을 만들었다 (기능은 제거, 기록은 보존·표시)
+   · auto : 매월 기준일 이후 미완료 동을 전 항목 'O'·완료·관리자 확인으로 자동 등록 (r.auto=true)
+   · seed : 1~7월 기록 일괄 소급 생성 (고정 점검일·점검자 강영태/유성환·관리자 강창구, 표시 없음)
+   · 지적사항 auto=true : 문구 목록에서 골라 자동 생성된 지적 (실제 지적 아님)
+   실제 점검으로 다시 입력하면(재입력) r.redoAt 이 생기고 표시가 풀린다 */
+const SEED_DATES={1:'2026-01-05',2:'2026-02-02',3:'2026-03-04',4:'2026-04-06',5:'2026-05-04',6:'2026-06-03',7:'2026-07-06'};
+const SEED_INSP={'B동':'강영태','C동':'유성환'};
+function genOf(k,r){
+ r=r||DB.months[k]; if(!r) return '';
+ if(r.auto) return 'auto';            // 재입력 후에도 옛 화면이 다시 자동 등록하면 auto 가 우선
+ if(r.redoAt) return '';
+ const b=k.split('|')[0], mk=monPart(k), m=+mk.slice(5);
+ if(mk.slice(0,4)==='2026' && SEED_DATES[m]===r.date && r.inspector===SEED_INSP[b] && r.manager==='강창구') return 'seed';
+ return '';
+}
+const GEN_TXT={auto:'전산 자동생성 — 실점검 아님', seed:'전산 소급생성 — 실점검 근거 없음'};
+/* 이 달 점검표에 남아 있는 자동 생성 지적의 X 표시 (옛 seedIssues 가 실점검 달에도 넣었음) */
+function autoMarks(k){ const r=DB.months[k]; if(!r) return [];
+ const b=k.split('|')[0], mk=monPart(k);
+ return DB.issues.filter(x=>x.auto&&(x.bldg||'B동')===b&&x.month===mk&&r.marks[x.id]==='X'); }
+function realDone(k){ const r=DB.months[k]; return !!(r&&r.done&&!genOf(k,r)); }
+/* 이 달을 실제 점검으로 다시 입력 (전산 생성 판정은 genBak 에 보관) */
+function redoMonth(){ const k=mkey(), r=mrec(k), g=genOf(k,r); if(!g) return;
+ if(!confirm(`${CUR_B} ${monPart(k).slice(5)}월 기록은 ${GEN_TXT[g]}입니다.\n\n판정·완료·관리자 확인을 비우고 실제 점검 결과로 다시 입력합니다.\n(전산 생성 내용은 지우지 않고 별도 보관합니다)`)) return;
+ r.genBak={gen:g,date:r.date,inspector:r.inspector,manager:r.manager,mgrAt:r.mgrAt,marks:r.marks,notes:r.notes,at:new Date().toISOString()};
+ Object.assign(r,{date:'',inspector:'',manager:'',done:false,mgrAt:'',marks:{},notes:{},redoAt:new Date().toISOString()});
+ delete r.auto; persist(); renderCheck(); toast('실제 점검 결과를 입력한 뒤 [점검 완료]를 누르세요'); }
 function lastRec(b,mk){ // mk 이전 가장 최근 완료 기록
- const ks=Object.keys(DB.months).filter(k=>k.startsWith(b+'|')&&monPart(k)<mk&&DB.months[k].done&&DB.months[k].inspector).sort();
+ const ks=Object.keys(DB.months).filter(k=>k.startsWith(b+'|')&&monPart(k)<mk&&realDone(k)&&DB.months[k].inspector).sort();
  return ks.length?DB.months[ks[ks.length-1]]:null; }
 const DEF_INSP={'B동':'강영태','C동':'유성환'};
 
@@ -1202,7 +1214,7 @@ async function ntfyCheckNow(silent){
  const K=kstNow(), y=DB.year, m=K.m;
  if(K.y!==y){ if(!silent) toast('현재 연도 데이터가 아닙니다'); return; }
  const mk=`${y}-${p2(m)}`;
- const pend=BLDGS.filter(b=>!(DB.months[b+'|'+mk]||{}).done);
+ const pend=BLDGS.filter(b=>!realDone(b+'|'+mk));   // 전산 생성 기록은 미점검으로 본다
  let sent=false;
  // 1) 점검 안내 (지정일~첫째 주, 월 1회)
  if(pend.length && K.d>=NT.day && K.d<=7 && await claim(ntfyKey('notice',mk),0)){
@@ -1222,99 +1234,18 @@ async function ntfyCheckNow(silent){
 }
 
 /* ============ 월 지적사항 (월 1건) ============ */
-const ISSUE_POOL=[
- ['프레스 작업장','5S','청소','프레스 하부 스크랩 누적 및 유분 오염','스크랩 제거·유분 청소 완료, 교대 종료 시 청소 기준 재교육'],
- ['자재 창고(코일)','3정','정위치','코일 1본 구획선 밖 임시 적치','지정 랙으로 이동, 구획선 재도색'],
- ['금형 보관장','5S','정돈','금형 2벌 식별표(품번·등급) 탈락','식별표 재발행 후 부착'],
- ['프레스 작업장','3정','정량','완제품 파렛트 적재높이 기준 초과(1단 과적)','재적재 및 적재기준 표지 부착'],
- ['세척장','5S','정돈','세척일지 일부 기록 누락','기록 보완, 일일 확인 서명란 추가'],
- ['금형 보관장','5S','청소','장기 미사용 금형 방청유 미도포·먼지 부착','방청유 도포, 월 1회 방청 점검 추가'],
- ['자재 창고(코일)','3정','정품','SUS304 코일 색상 구분 스티커 미부착 1본','스티커 부착, 입고 시 부착 여부 확인'],
- ['프레스 작업장','5S','정돈','공구대 공구 제자리 미반납','공구 반납, 공구대 위치표시 보완'],
- ['프레스 작업장','5S','습관화','작업자 1명 귀마개 미착용','현장 교육 및 보호구 착용 점검'],
- ['자재 창고(코일)','5S','청소','코일 보관구역 바닥 먼지·포장재 잔재','청소 및 포장재 수거함 비치'],
- ['금형 보관장','3정','정위치','금형 1벌 실제 위치와 현황판 불일치','현황판 위치 수정, 입출고 시 즉시 갱신 재교육'],
- ['세척장','5S','청결','세척조 주변 바닥 세척액 비산','바닥 청소 및 비산 방지 커버 설치']];
-function poolFor(b,m){ // 해당 동에 존재하는 구역·항목으로 선택
- for(let i=0;i<12;i++){ const P=ISSUE_POOL[(m-1+i*2)%12]; const [area,grp,item]=P;
-   if(areasOf(b).includes(area) && (itemsFor(area)[grp]||[]).some(x=>x[0]===item)) return P; }
- return null; }
-function addMonthIssue(b,mk,status,recheck){
- const m=+mk.slice(5), P=poolFor(b,m); if(!P) return false;
- const [area,grp,item,text,action]=P, id=`${area}|${grp}|${item}`;
- const r=DB.months[b+'|'+mk]; if(!r) return false;
- r.marks[id]='X'; r.notes[id]=text;
- DB.issues.push({bldg:b,month:mk,id,area,grp,item,text,action,status,recheck:recheck||'',auto:true});
- return true; }
-function ensureAutoMarks(){ let ch=false; // 다른 기기 업로드로 X 표시가 지워졌으면 복원
- DB.issues.filter(x=>x.auto).forEach(x=>{ const r=DB.months[x.bldg+'|'+x.month]; if(!r) return;
-   if(r.marks[x.id]!=='X'||r.notes[x.id]!==x.text){ r.marks[x.id]='X'; r.notes[x.id]=x.text; ch=true; } });
- return ch; }
-/* 1~8월 지적사항 소급 등록 (월 1건, 홀수월 B동·짝수월 C동, 재확인완료) */
-function seedIssues(){
- let ch=false; const y=DB.year;
- for(let m=1;m<=8;m++){ const mk=`${y}-${p2(m)}`;
-   if(DB.issues.some(x=>x.month===mk)) continue;
-   const b=m%2?'B동':'C동', r=DB.months[b+'|'+mk]; if(!r||!r.done) continue;
-   const nx=DB.months[b+'|'+y+'-'+p2(m+1)];
-   if(addMonthIssue(b,mk,'재확인완료',nx&&nx.date?kDateStr(nx.date):'')) ch=true; }
- DB.issues.filter(x=>x.auto&&x.status==='재확인완료'&&!x.recheck).forEach(x=>{ // 재확인일 보완
-   const m=+x.month.slice(5), nx=DB.months[x.bldg+'|'+x.month.slice(0,5)+p2(m+1)];
-   if(nx&&nx.date){ x.recheck=kDateStr(nx.date); ch=true; } });
- if(ensureAutoMarks()) ch=true;
- if(ch) persist(); return ch; }
-
-/* ============ 월 실적 자동 등록 (기준일 임박 시) ============ */
-function autoDate(K){ // 첫째 주 안의 평일
- const lim=Math.min(K.d,7);
- for(let d=lim; d>=1; d--){ const ymd=`${K.y}-${p2(K.m)}-${p2(d)}`; const w=wdayOf(ymd); if(w!==0&&w!==6) return ymd; }
- return `${K.y}-${p2(K.m)}-${p2(K.d)}`; }
-function autoFill(b,mk,dt){
- const k=b+'|'+mk; const r=mrec(k); const pv=lastRec(b,mk)||{};
- r.date=r.date||dt; r.inspector=r.inspector||pv.inspector||DEF_INSP[b];
- r.manager=r.manager||pv.manager||'강창구';
- areasOf(b).forEach(a=>{ const IT=itemsFor(a); for(const g in IT) IT[g].forEach(([nm])=>{ const id=`${a}|${g}|${nm}`; if(!r.marks[id]) r.marks[id]='O'; }); });
- r.done=true; r.mgrAt=r.mgrAt||kDateStr(r.date); r.auto=true; }
-async function autoRun(force){
- const C=cfgOf(); if(!C.auto && !force) return;
- const K=kstNow(); if(K.y!==DB.year) return;
- if(!force && (K.d<C.autoDay || inQuiet())) return;   // 기준일 임박 + 근무시간에만
- const mk=`${K.y}-${p2(K.m)}`;
- if(!BLDGS.some(b=>!(DB.months[b+'|'+mk]||{}).done)){ if(force)toast('이번 달 점검이 이미 완료되어 있습니다'); return; }
- if(autoRun._busy) return; autoRun._busy=true;
- try{
-  if(!(await cloudDown(true))){ if(force)toast('서버 연결 실패 · 자동 등록 보류'); return; } // 다른 기기 실적 먼저 반영
-  const pend=BLDGS.filter(b=>!(DB.months[b+'|'+mk]||{}).done); if(!pend.length) return;
-  const dt=autoDate(K);
-  pend.forEach(b=>autoFill(b,mk,dt));
-  // 이번 달 지적 1건 (실제 지적이 없을 때만, 자동 등록된 동에)
-  let nIss=0;
-  if(!DB.issues.some(x=>x.month===mk)){
-    const pref=K.m%2?'B동':'C동', b=pend.includes(pref)?pref:pend[0];
-    if(addMonthIssue(b,mk,'조치완료','')) nIss=1; }
-  // 지난달 자동 지적 → 재확인완료
-  DB.issues.filter(x=>x.auto&&x.status==='조치완료'&&x.month<mk).forEach(x=>{ x.status='재확인완료'; x.recheck=kDateStr(dt); });
-  localStorage.setItem(LS_KEY, JSON.stringify(DB)); await cloudUp(false);
-  renderCheck(); const yv=document.getElementById('v-year'); if(!yv.classList.contains('hide'))renderYear();
-  if(await claim(ntfyKey('auto',mk),0))
-    ntfySend(`[3정5S] ${K.m}월 점검 실적 자동 등록`,
-      `${pend.join(', ')} ${K.m}월 점검 실적이 등록되었습니다 (점검일 ${dt}).\n지적사항 ${nIss}건`,'white_check_mark',3);
-  toast(`${pend.join(', ')} ${K.m}월 실적 자동 등록 완료`);
- } finally{ autoRun._busy=false; }
-}
-
 /* ============ 공용 설정 UI ============ */
 function cfgLoad(){ const C=cfgOf(), g=id=>document.getElementById(id); if(!g('cfgFrom')) return;
  g('cfgFrom').value=String(C.from); g('cfgTo').value=String(C.to); g('cfgWk').checked=!!C.wk;
- g('cfgAuto').checked=!!C.auto; g('cfgAutoDay').value=String(C.autoDay); cfgState(); }
+ cfgState(); }
 function cfgSave(){ const C=cfgOf(), g=id=>document.getElementById(id);
  C.from=+g('cfgFrom').value; C.to=+g('cfgTo').value; C.wk=g('cfgWk').checked;
  if(C.to<=C.from){ toast('종료 시각이 시작 시각보다 늦어야 합니다'); C.to=Math.min(23,C.from+1); g('cfgTo').value=String(C.to); }
- C.auto=g('cfgAuto').checked; C.autoDay=+g('cfgAutoDay').value; C.at=Date.now();
+ C.at=Date.now();
  persist(); cfgState(); toast('설정 저장 · 모든 기기에 적용'); }
 function cfgState(){ const C=cfgOf(), K=kstNow(), e=document.getElementById('cfgInfo'); if(!e) return;
  e.innerHTML=`현재 한국시간 <b>${K.m}/${K.d} ${p2(K.h)}시</b> · 알림 ${inQuiet()?'<b style="color:var(--bad)">차단 시간</b>':'<b style="color:var(--ok)">허용 시간</b>'} · `+
-   `자동 등록 ${C.auto?`<b>매월 ${C.autoDay}일 이후 미완료 시</b>`:'<b>사용 안 함</b>'}`; }
+   `월 실적 자동 등록 <b>없음</b> (2026-11 제거)`; }
 
 /* ============ 새 버전 자동 반영 (상시 켜둔 현장 PC용) ============ */
 async function verCheck(){ try{
@@ -1325,9 +1256,15 @@ async function verCheck(){ try{
 }catch(e){} }
 
 /* ============ 시작 ============ */
-load(); seedHistory(); initMonths(); renderCheck(); sbFillForm(); ntfyLoad(); cfgLoad();
-cloudDown().then(()=>{ if(seedIssues()) renderCheck(); cfgLoad(); setTimeout(async()=>{ await autoRun(); ntfyCheckNow(true); },1500); });
-setInterval(async()=>{ await autoRun(); ntfyCheckNow(true); cfgState(); }, 10*60*1000);   // 10분마다 (한국시간 근무시간에만 동작)
+load(); initMonths(); renderCheck(); sbFillForm(); ntfyLoad(); cfgLoad();
+cloudDown().then(async ok=>{
+  const C=cfgOf();
+  if(ok && (C.auto!==false || C.autoDay!==undefined)){   // 서버 공용 설정에 auto:false 를 최신 시각으로 남긴다 → 옛 화면이 병합해 autoRun 을 멈춤
+    C.auto=false; delete C.autoDay; C.at=Date.now(); localStorage.setItem(LS_KEY, JSON.stringify(DB));
+    try{ await cloudUp(false); }catch(e){}
+  }
+  renderCheck(); cfgLoad(); setTimeout(()=>ntfyCheckNow(true),1500); });
+setInterval(()=>{ ntfyCheckNow(true); cfgState(); }, 10*60*1000);   // 10분마다 미점검 알림 확인 (한국시간 근무시간에만)   // 10분마다 (한국시간 근무시간에만 동작)
 setInterval(verCheck, 60*60*1000);
 </script>
 
